@@ -78,6 +78,13 @@ public class MainActivity extends AppCompatActivity {
         span = new DraweeSpan("http://static.yo9.com/web/emotions/tv_sad.png", placeHolder);
         builder.setSpan(span, start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
+        builder.append("\n\n");
+        builder.append("This is a gif");
+        start = builder.length();
+        builder.append("[img]");
+        builder.setSpan(new DraweeSpan("asset:///cat.gif", true),
+                start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
 
         return builder;
     }
