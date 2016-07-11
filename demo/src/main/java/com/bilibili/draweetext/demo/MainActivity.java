@@ -79,10 +79,10 @@ public class MainActivity extends AppCompatActivity {
         builder.setSpan(span, start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
         builder.append("\n\n");
-        builder.append("This is a gif");
+        builder.append("This is a gif ");
         start = builder.length();
         builder.append("[img]");
-        builder.setSpan(new DraweeSpan("asset:///cat.gif", true),
+        builder.setSpan(new DraweeSpan("asset:///funny.gif", true),
                 start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
 

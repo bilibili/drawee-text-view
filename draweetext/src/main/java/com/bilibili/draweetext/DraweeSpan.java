@@ -22,6 +22,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -40,11 +41,13 @@ import com.facebook.drawee.drawable.ForwardingDrawable;
 import com.facebook.drawee.drawable.OrientedDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedImageResult;
+import com.facebook.imagepipeline.common.ImageDecodeOptions;
 import com.facebook.imagepipeline.core.ImagePipelineFactory;
 import com.facebook.imagepipeline.image.CloseableAnimatedImage;
 import com.facebook.imagepipeline.image.CloseableImage;
 import com.facebook.imagepipeline.image.CloseableStaticBitmap;
 import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
 /**
  * Like {@link com.facebook.drawee.interfaces.DraweeHierarchy} that displays a placeholder
@@ -166,9 +169,11 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     private void submitRequest() {
         mIsRequestSubmitted = true;
         final String id = getId();
+        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(Uri.parse(getImageUri()))
+                .setImageDecodeOptions(ImageDecodeOptions.newBuilder().setDecodePreviewFrame(true).build()).build();
 
         mDataSource = ImagePipelineFactory.getInstance().getImagePipeline()
-                .fetchDecodedImage(ImageRequest.fromUri(getImageUri()), null);
+                .fetchDecodedImage(request, null);
         DataSubscriber<CloseableReference<CloseableImage>> subscriber
                 = new BaseDataSubscriber<CloseableReference<CloseableImage>>() {
             @Override
@@ -273,6 +278,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
             if (mShouldShowAnim) {
                 final AnimatedDrawable drawable = ImagePipelineFactory.getInstance().getAnimatedDrawableFactory().create(image);
                 drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+                mActualDrawable.setBounds(drawable.getBounds());
                 drawable.setCallback(mAttachedView);
                 drawable.start();
                 return drawable;
