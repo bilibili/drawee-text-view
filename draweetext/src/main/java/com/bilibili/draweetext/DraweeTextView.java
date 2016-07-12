@@ -23,6 +23,9 @@ import android.text.Spanned;
 import android.util.AttributeSet;
 import android.widget.TextView;
 
+import com.facebook.drawee.drawable.ForwardingDrawable;
+import com.facebook.imagepipeline.animated.base.AnimatableDrawable;
+
 /**
  * Like {@link com.facebook.drawee.view.DraweeView} that displays drawables {@link DraweeSpan} but surrounded with text.
  *
@@ -99,6 +102,12 @@ public class DraweeTextView extends TextView {
         }
     }
 
+    @Override
+    protected boolean verifyDrawable(Drawable who) {
+        return super.verifyDrawable(who) || mHasDraweeInText
+                // only schedule animation on AnimatableDrawable
+                && (who instanceof ForwardingDrawable && who.getCurrent() instanceof AnimatableDrawable);
+    }
     /**
      * Attach DraweeSpans in text
      */

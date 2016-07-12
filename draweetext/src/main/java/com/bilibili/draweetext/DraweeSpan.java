@@ -22,13 +22,14 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.style.DynamicDrawableSpan;
 import android.util.Log;
-import android.view.View;
 
 import com.facebook.common.executors.UiThreadImmediateExecutorService;
+import com.facebook.common.logging.FLog;
 import com.facebook.common.references.CloseableReference;
 import com.facebook.datasource.BaseDataSubscriber;
 import com.facebook.datasource.DataSource;
@@ -37,12 +38,16 @@ import com.facebook.drawable.base.DrawableWithCaches;
 import com.facebook.drawee.components.DeferredReleaser;
 import com.facebook.drawee.drawable.ForwardingDrawable;
 import com.facebook.drawee.drawable.OrientedDrawable;
+import com.facebook.imagepipeline.animated.base.AnimatableDrawable;
+import com.facebook.imagepipeline.animated.base.AnimatedDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedImageResult;
+import com.facebook.imagepipeline.common.ImageDecodeOptions;
 import com.facebook.imagepipeline.core.ImagePipelineFactory;
 import com.facebook.imagepipeline.image.CloseableAnimatedImage;
 import com.facebook.imagepipeline.image.CloseableImage;
 import com.facebook.imagepipeline.image.CloseableStaticBitmap;
 import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
 /**
  * Like {@link com.facebook.drawee.interfaces.DraweeHierarchy} that displays a placeholder
@@ -52,7 +57,7 @@ import com.facebook.imagepipeline.request.ImageRequest;
  *
  * @author yrom
  */
-public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.Releasable {
+public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.Releasable{
 
 
     private static Drawable createEmptyDrawable() {
@@ -68,21 +73,31 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     private boolean mIsRequestSubmitted;
     private Drawable mDrawable;
     private Drawable mPlaceHolder;
-    private View mAttachedView;
+    private DraweeTextView mAttachedView;
     private String mImageUri;
     private boolean mIsAttached;
+    private boolean mShouldShowAnim = false;
 
     /**
      * @see ImageRequest#fromUri(String)
      * @see com.facebook.common.util.UriUtil
      */
     public DraweeSpan(String uri) {
-        this(uri, createEmptyDrawable());
+        this(uri, false);
     }
 
     public DraweeSpan(String uri, Drawable placeHolder) {
+        this(uri, placeHolder, false);
+    }
+
+    public DraweeSpan(String uri, boolean showAnim) {
+        this(uri, createEmptyDrawable(), showAnim);
+    }
+
+    public DraweeSpan(String uri, Drawable placeHolder, boolean showAnim) {
         super(ALIGN_BOTTOM);
         mImageUri = uri;
+        mShouldShowAnim = showAnim;
         mDeferredReleaser = DeferredReleaser.getInstance();
         mPlaceHolder = placeHolder;
         // create forwarding drawable with placeholder
@@ -104,6 +119,9 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         if (mDrawable != drawable) {
             releaseDrawable(mDrawable);
             mActualDrawable.setDrawable(drawable);
+            if (drawable instanceof AnimatedDrawable) {
+                ((AnimatableDrawable) drawable).start();
+            }
             mDrawable = drawable;
         }
     }
@@ -112,14 +130,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         mActualDrawable.setDrawable(mPlaceHolder);
     }
 
-    /**
-     * set bounds
-     */
-    public void setSize(int width, int height) {
-        mActualDrawable.setBounds(0, 0, width, height);
-    }
-
-    public void onAttach(@NonNull View view) {
+    public void onAttach(@NonNull DraweeTextView view) {
         mIsAttached = true;
         if (mAttachedView != view) {
             mActualDrawable.setCallback(null);
@@ -127,6 +138,9 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
                 throw new IllegalStateException("has been attached to view:" + mAttachedView);
             }
             mAttachedView = view;
+            if (mDrawable != null) {
+                mActualDrawable.setDrawable(mDrawable);
+            }
             mActualDrawable.setCallback(mAttachedView);
         }
         mDeferredReleaser.cancelDeferredRelease(this);
@@ -138,15 +152,20 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
                 ImagePipelineFactory.initialize(mAttachedView.getContext().getApplicationContext());
             }
             submitRequest();
+        } else if (mShouldShowAnim && mDrawable instanceof AnimatableDrawable) {
+            ((AnimatableDrawable) mDrawable).start();
         }
     }
 
     private void submitRequest() {
         mIsRequestSubmitted = true;
         final String id = getId();
+        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(Uri.parse(getImageUri()))
+                .setImageDecodeOptions(ImageDecodeOptions.newBuilder().setDecodePreviewFrame(true).build())
+                .build();
 
         mDataSource = ImagePipelineFactory.getInstance().getImagePipeline()
-                .fetchDecodedImage(ImageRequest.fromUri(getImageUri()), null);
+                .fetchDecodedImage(request, null);
         DataSubscriber<CloseableReference<CloseableImage>> subscriber
                 = new BaseDataSubscriber<CloseableReference<CloseableImage>>() {
             @Override
@@ -180,8 +199,8 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     private void onFailureInternal(String id,
             DataSource<CloseableReference<CloseableImage>> dataSource,
             Throwable throwable, boolean isFinished) {
-        if (BuildConfig.DEBUG) {
-            Log.e("ImageSpan", id + " load failure", throwable);
+        if (FLog.isLoggable(Log.WARN)) {
+            FLog.w(DraweeSpan.class, id + " load failure", throwable);
         }
         // ignored this result
         if (!getId().equals(id)
@@ -247,11 +266,19 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
                     ? new OrientedDrawable(bitmapDrawable, closeableStaticBitmap.getRotationAngle()) : bitmapDrawable);
         } else if (closeableImage instanceof CloseableAnimatedImage) {
             AnimatedImageResult image = ((CloseableAnimatedImage) closeableImage).getImageResult();
+
+            if (mShouldShowAnim) {
+                AnimatedDrawable drawable = ImagePipelineFactory.getInstance().getAnimatedDrawableFactory().create(image);
+                drawable.setLogId(getId());
+                return drawable;
+            }
+
             int frame = image.getFrameForPreview();
-            CloseableReference<Bitmap> bitmap;
+            CloseableReference<Bitmap> bitmap = null;
             if (frame >= 0) {
                 bitmap = image.getDecodedFrame(frame);
-            } else {
+            }
+            if (bitmap == null) {
                 bitmap = image.getPreviewBitmap();
             }
             if (bitmap != null && bitmap.get() != null) {
@@ -277,6 +304,9 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     public void onDetach() {
         if (!mIsAttached)
             return;
+        if (mShouldShowAnim && mDrawable instanceof AnimatableDrawable) {
+            ((AnimatableDrawable) mDrawable).stop();
+        }
         mActualDrawable.setCallback(null);
         mAttachedView = null;
         reset();
@@ -303,8 +333,12 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     }
 
     void releaseDrawable(@Nullable Drawable drawable) {
+        if (drawable instanceof AnimatableDrawable && ((AnimatableDrawable) drawable).isRunning()) {
+            ((AnimatableDrawable) drawable).stop();
+        }
         if (drawable instanceof DrawableWithCaches) {
             ((DrawableWithCaches) drawable).dropCaches();
         }
     }
+
 }

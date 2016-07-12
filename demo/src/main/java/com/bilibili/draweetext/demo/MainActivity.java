@@ -24,15 +24,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.bilibili.draweetext.DraweeSpan;
+import com.facebook.common.logging.FLog;
+import com.facebook.common.logging.FLogDefaultLoggingDelegate;
 
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FLog.setMinimumLoggingLevel(Log.VERBOSE);
         setContentView(R.layout.activity_main);
         TextView textview = (TextView) findViewById(R.id.text);
         textview.setMovementMethod(ScrollingMovementMethod.getInstance());
@@ -78,7 +82,21 @@ public class MainActivity extends AppCompatActivity {
         span = new DraweeSpan("http://static.yo9.com/web/emotions/tv_sad.png", placeHolder);
         builder.setSpan(span, start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-
+        builder.append("\n\n");
+        builder.append("This is a gif ");
+        start = builder.length();
+        builder.append("[gif:d559f520246811e69a4a00163e000cdb]");
+        placeHolder = new ColorDrawable(Color.BLUE);
+        placeHolder.setBounds(0, 0, 200, 197);
+        builder.setSpan(new DraweeSpan("http://img.yo9.com/d559f520246811e69a4a00163e000cdb", placeHolder, true),
+                start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        builder.append("\nDisabled animation");
+        start = builder.length();
+        builder.append("[gif:d559f520246811e69a4a00163e000cdb]");
+        placeHolder = new ColorDrawable(Color.BLUE);
+        placeHolder.setBounds(0, 0, 200, 197);
+        builder.setSpan(new DraweeSpan("http://img.yo9.com/d559f520246811e69a4a00163e000cdb", placeHolder, false),
+                start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return builder;
     }
 }
