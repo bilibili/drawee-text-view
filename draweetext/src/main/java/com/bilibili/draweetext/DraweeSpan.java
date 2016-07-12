@@ -170,7 +170,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         mIsRequestSubmitted = true;
         final String id = getId();
         ImageRequest request = ImageRequestBuilder.newBuilderWithSource(Uri.parse(getImageUri()))
-                .setImageDecodeOptions(ImageDecodeOptions.newBuilder().setDecodePreviewFrame(true).build()).build();
+                .setImageDecodeOptions(ImageDecodeOptions.newBuilder().setDecodePreviewFrame(false).build()).build();
 
         mDataSource = ImagePipelineFactory.getInstance().getImagePipeline()
                 .fetchDecodedImage(request, null);
@@ -278,7 +278,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
             if (mShouldShowAnim) {
                 final AnimatedDrawable drawable = ImagePipelineFactory.getInstance().getAnimatedDrawableFactory().create(image);
                 drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-                mActualDrawable.setBounds(drawable.getBounds());
+                //mActualDrawable.setBounds(drawable.getBounds());
                 drawable.setCallback(mAttachedView);
                 drawable.start();
                 return drawable;
