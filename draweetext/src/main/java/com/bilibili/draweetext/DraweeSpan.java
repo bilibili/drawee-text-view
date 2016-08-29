@@ -17,7 +17,10 @@ package com.bilibili.draweetext;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
@@ -25,6 +28,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.text.style.DynamicDrawableSpan;
 import android.util.Log;
 
@@ -38,6 +42,7 @@ import com.facebook.drawable.base.DrawableWithCaches;
 import com.facebook.drawee.components.DeferredReleaser;
 import com.facebook.drawee.drawable.ForwardingDrawable;
 import com.facebook.drawee.drawable.OrientedDrawable;
+import com.facebook.drawee.drawable.TransformAwareDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatableDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedImageResult;
@@ -49,6 +54,8 @@ import com.facebook.imagepipeline.image.CloseableStaticBitmap;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Like {@link com.facebook.drawee.interfaces.DraweeHierarchy} that displays a placeholder
  * until actual image is set.
@@ -58,7 +65,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
  * @author yrom
  */
 public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.Releasable{
-
+    private static final String TAG = "DraweeSpan";
 
     private static Drawable createEmptyDrawable() {
         ColorDrawable d = new ColorDrawable(Color.TRANSPARENT);
@@ -75,39 +82,26 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     private Drawable mPlaceHolder;
     private DraweeTextView mAttachedView;
     private String mImageUri;
+    private Point mLayout = new Point();
+    private Rect mMargin = new Rect();
     private boolean mIsAttached;
     private boolean mShouldShowAnim = false;
 
     /**
-     * @see ImageRequest#fromUri(String)
-     * @see com.facebook.common.util.UriUtil
+     * Use {@link Builder} to build a DraweeSpan.
      */
-    public DraweeSpan(String uri) {
-        this(uri, false);
-    }
-
-    public DraweeSpan(String uri, Drawable placeHolder) {
-        this(uri, placeHolder, false);
-    }
-
-    public DraweeSpan(String uri, boolean showAnim) {
-        this(uri, createEmptyDrawable(), showAnim);
-    }
-
-    public DraweeSpan(String uri, Drawable placeHolder, boolean showAnim) {
-        super(ALIGN_BOTTOM);
+    private DraweeSpan(String uri, int verticalAlignment, Drawable placeHolder, boolean showAnim) {
+        super(verticalAlignment);
         mImageUri = uri;
         mShouldShowAnim = showAnim;
         mDeferredReleaser = DeferredReleaser.getInstance();
         mPlaceHolder = placeHolder;
         // create forwarding drawable with placeholder
         mActualDrawable = new ForwardingDrawable(mPlaceHolder);
-        Rect bounds = mPlaceHolder.getBounds();
-        if (bounds.right == 0 || bounds.bottom == 0) {
-            mActualDrawable.setBounds(0, 0, mPlaceHolder.getIntrinsicWidth(), mPlaceHolder.getIntrinsicHeight());
-        } else {
-            mActualDrawable.setBounds(bounds);
-        }
+    }
+
+    protected void layout() {
+        mActualDrawable.setBounds(0, 0, mLayout.x, mLayout.y);
     }
 
     @Override
@@ -115,10 +109,31 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         return mActualDrawable;
     }
 
-    public void setImageWithIntrinsicBounds(Drawable drawable) {
+    @Override
+    public int getSize(Paint paint, CharSequence text, int start, int end, Paint.FontMetricsInt fm) {
+        Drawable d = getDrawable();
+        Rect rect = d.getBounds();
+
+        if (fm != null) {
+            fm.ascent = -rect.bottom - mMargin.top;
+            fm.descent = 0;
+
+            fm.top = fm.ascent;
+            fm.bottom = 0;
+        }
+
+        return rect.right + mMargin.left + mMargin.right;
+    }
+
+    @Override
+    public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
+        super.draw(canvas, text, start, end, x + mMargin.left, top, y, bottom, paint);
+    }
+
+    public void setImage(Drawable drawable) {
         if (mDrawable != drawable) {
             releaseDrawable(mDrawable);
-            mActualDrawable.setDrawable(drawable);
+            setDrawableInner(drawable);
             if (drawable instanceof AnimatedDrawable) {
                 ((AnimatableDrawable) drawable).start();
             }
@@ -126,8 +141,15 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
     }
 
+    private void setDrawableInner(Drawable drawable) {
+        if(drawable == null) {
+            return;
+        }
+        mActualDrawable.setDrawable(drawable);
+    }
+
     public void reset() {
-        mActualDrawable.setDrawable(mPlaceHolder);
+        setDrawableInner(mPlaceHolder);
     }
 
     public void onAttach(@NonNull DraweeTextView view) {
@@ -138,9 +160,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
                 throw new IllegalStateException("has been attached to view:" + mAttachedView);
             }
             mAttachedView = view;
-            if (mDrawable != null) {
-                mActualDrawable.setDrawable(mDrawable);
-            }
+            setDrawableInner(mDrawable);
             mActualDrawable.setCallback(mAttachedView);
         }
         mDeferredReleaser.cancelDeferredRelease(this);
@@ -158,6 +178,10 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     }
 
     private void submitRequest() {
+        if(TextUtils.isEmpty(getImageUri())) {
+            return;
+        }
+
         mIsRequestSubmitted = true;
         final String id = getId();
         ImageRequest request = ImageRequestBuilder.newBuilderWithSource(Uri.parse(getImageUri()))
@@ -212,9 +236,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         if (isFinished) {
             mDataSource = null;
             // Set the previously available image if available.
-            if (mDrawable != null) {
-                mActualDrawable.setDrawable(mDrawable);
-            }
+            setDrawableInner(mDrawable);
         }
     }
 
@@ -245,7 +267,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
             // set the new image
             if (isFinished) {
                 mDataSource = null;
-                setImageWithIntrinsicBounds(drawable);
+                setImage(drawable);
             }
         } finally {
             if (previousDrawable != null && previousDrawable != drawable) {
@@ -341,4 +363,74 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
     }
 
+    public static class Builder {
+        String uri;
+        int width = 100;
+        int height = 100;
+        int verticalAlignment = ALIGN_BOTTOM;
+        Drawable placeholder = createEmptyDrawable();
+        boolean showAnim;
+        Rect margin = new Rect();
+
+        public Builder(String uri) {
+            this(uri, false);
+        }
+
+        /**
+         * DraweeSpan builder.
+         *
+         * @param uri image uri.
+         * @param verticalAlignment one of {@link #ALIGN_BOTTOM} or {@link #ALIGN_BASELINE}.
+         */
+        public Builder(String uri, boolean alignBaseline) {
+            this.uri = uri;
+            if(alignBaseline) {
+                this.verticalAlignment = ALIGN_BASELINE;
+            }
+        }
+
+        public Builder setLayout(int width, int height) {
+            this.width = width;
+            this.height = height;
+            return this;
+        }
+
+        /**
+         * You can set margin in left, right and top. Bottom is in baseline.
+         */
+        public Builder setMargin(int margin) {
+            this.margin.set(margin, margin, margin, 0);
+            return this;
+        }
+
+        /**
+         * You can set margin in left, right and top. Bottom is in baseline.
+         */
+        public Builder setMargin(int left, int top, int right) {
+            this.margin.set(left, top, right, 0);
+            return this;
+        }
+
+        public Builder setPlaceHolderImage(Drawable placeholder) {
+            this.placeholder = placeholder;
+            return this;
+        }
+
+        /**
+         * Show anim in animate drawable.
+         * @param showAnim If set true, gif image would animate immediately.
+         */
+        public Builder setShowAnimaImmediately(boolean showAnim) {
+            this.showAnim = showAnim;
+            return this;
+        }
+
+        public DraweeSpan build() {
+            DraweeSpan span = new DraweeSpan(uri, verticalAlignment, placeholder, showAnim);
+            span.mLayout.set(width, height);
+            span.mMargin.set(margin.left, margin.top, margin.right, 0);
+            span.layout();
+            return span;
+        }
+    }
 }

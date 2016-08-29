@@ -22,4 +22,5 @@ android {
 dependencies {
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile project(':draweetext')
+    compile 'com.facebook.fresco:fresco:0.9.0'
 }
