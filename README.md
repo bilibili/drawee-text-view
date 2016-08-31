@@ -1,6 +1,6 @@
 # DraweeTextView
-Simple drawee spannable text view based on [Fresco][1].
-
+Simple drawee spannable text view based on [Fresco][1].  
+[![Build Status](https://travis-ci.org/Bilibili/drawee-text-view.svg?branch=master)](https://travis-ci.org/Bilibili/drawee-text-view)
 # Usage
 ```java
 DraweeTextView textview = (DraweeTextView)findViewById(R.id.text);
