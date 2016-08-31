@@ -205,7 +205,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     }
 
     @NonNull
-    protected String getImageUri() {
+    public String getImageUri() {
         return mImageUri;
     }
 
