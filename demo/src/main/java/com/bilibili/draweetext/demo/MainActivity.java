@@ -46,34 +46,34 @@ public class MainActivity extends AppCompatActivity {
     CharSequence buildText() {
         SpannableStringBuilder builder = new SpannableStringBuilder();
         builder.append("2333333333333");
-        builder.append("\nwh=100, margin=0:www");
+        builder.append("\nwh=50, margin=0:www");
         int start = builder.length();
         builder.append("[img]");
         builder.setSpan(new DraweeSpan.Builder("http://img.yo9.com/24fe1ed09fbc11e59d8700163e00043c")
-                            .setLayout(100, 100).build(),
+                            .setLayout(50, 50).build(),
                         start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         builder.append("www");
-        builder.append("\nwh=100, margin=10, align baseline:");
+        builder.append("\nwh=100, margin=8, align baseline:");
         start = builder.length();
         builder.append("[img]");
         builder.setSpan(new DraweeSpan.Builder("http://img.yo9.com/24fe1ed09fbc11e59d8700163e00043c", true)
                             .setLayout(100, 100)
-                            .setMargin(10)
+                            .setMargin(8)
                             .build(),
                 start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         builder.append("www");
-        builder.append("\nwh=100, margin=10, 10, 30:www");
+        builder.append("\nwh=100, margin=4, 4, 8，webp:");
         start = builder.length();
         builder.append("[img]");
-        builder.setSpan(new DraweeSpan.Builder("http://img.yo9.com/25126a209fbc11e59d8700163e00043c")
-                            .setLayout(100, 100).setMargin(10, 10, 30).build(),
+        builder.setSpan(new DraweeSpan.Builder("http://img.yo9.com/25126a209fbc11e59d8700163e00043c@100w.webp")
+                            .setLayout(100, 100).setMargin(4, 4, 8).build(),
                 start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         builder.append("www");
-        builder.append("\nwh=200, margin=0:www");
+        builder.append("\nwh=150, margin=0:www");
         start = builder.length();
         builder.append("[img]");
         builder.setSpan(new DraweeSpan.Builder("http://img.yo9.com/250c9dc09fbc11e59d8700163e00043c")
-                            .setLayout(200, 200).build(),
+                            .setLayout(150, 150).build(),
                 start, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         builder.append("www");
         builder.append("\n\n");

@@ -42,10 +42,11 @@ import com.facebook.drawable.base.DrawableWithCaches;
 import com.facebook.drawee.components.DeferredReleaser;
 import com.facebook.drawee.drawable.ForwardingDrawable;
 import com.facebook.drawee.drawable.OrientedDrawable;
-import com.facebook.drawee.drawable.TransformAwareDrawable;
+import com.facebook.imagepipeline.animated.base.AbstractAnimatedDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatableDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedImageResult;
+import com.facebook.imagepipeline.animated.factory.AnimatedFactory;
 import com.facebook.imagepipeline.common.ImageDecodeOptions;
 import com.facebook.imagepipeline.core.ImagePipelineFactory;
 import com.facebook.imagepipeline.image.CloseableAnimatedImage;
@@ -53,8 +54,6 @@ import com.facebook.imagepipeline.image.CloseableImage;
 import com.facebook.imagepipeline.image.CloseableStaticBitmap;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
-
-import java.lang.ref.WeakReference;
 
 /**
  * Like {@link com.facebook.drawee.interfaces.DraweeHierarchy} that displays a placeholder
@@ -64,14 +63,8 @@ import java.lang.ref.WeakReference;
  *
  * @author yrom
  */
-public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.Releasable{
+public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.Releasable {
     private static final String TAG = "DraweeSpan";
-
-    private static Drawable createEmptyDrawable() {
-        ColorDrawable d = new ColorDrawable(Color.TRANSPARENT);
-        d.setBounds(0, 0, 100, 100);
-        return d;
-    }
 
     private final DeferredReleaser mDeferredReleaser;
     private final ForwardingDrawable mActualDrawable;
@@ -287,14 +280,18 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
             return (closeableStaticBitmap.getRotationAngle() != 0 && closeableStaticBitmap.getRotationAngle() != -1
                     ? new OrientedDrawable(bitmapDrawable, closeableStaticBitmap.getRotationAngle()) : bitmapDrawable);
         } else if (closeableImage instanceof CloseableAnimatedImage) {
-            AnimatedImageResult image = ((CloseableAnimatedImage) closeableImage).getImageResult();
-
             if (mShouldShowAnim) {
-                AnimatedDrawable drawable = ImagePipelineFactory.getInstance().getAnimatedDrawableFactory().create(image);
-                drawable.setLogId(getId());
-                return drawable;
+                AnimatedFactory afactory = ImagePipelineFactory.getInstance().getAnimatedFactory();
+                if (afactory != null) {
+                    Drawable drawable = afactory.getAnimatedDrawableFactory(mAttachedView.getContext())
+                            .create(closeableImage);
+                    if (drawable instanceof AbstractAnimatedDrawable) {
+                        ((AbstractAnimatedDrawable) drawable).setLogId(getId());
+                    }
+                    return drawable;
+                }
             }
-
+            AnimatedImageResult image = ((CloseableAnimatedImage) closeableImage).getImageResult();
             int frame = image.getFrameForPreview();
             CloseableReference<Bitmap> bitmap = null;
             if (frame >= 0) {
@@ -363,12 +360,15 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
     }
 
+    /**
+     * DraweeSpan builder.
+     */
     public static class Builder {
         String uri;
         int width = 100;
         int height = 100;
         int verticalAlignment = ALIGN_BOTTOM;
-        Drawable placeholder = createEmptyDrawable();
+        Drawable placeholder;
         boolean showAnim;
         Rect margin = new Rect();
 
@@ -377,18 +377,25 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
 
         /**
-         * DraweeSpan builder.
+         * Construct drawee span builder.
          *
          * @param uri image uri.
-         * @param verticalAlignment one of {@link #ALIGN_BOTTOM} or {@link #ALIGN_BASELINE}.
+         * @param alignBaseline true to set {@link #ALIGN_BASELINE}, otherwise {@link #ALIGN_BOTTOM} .
          */
         public Builder(String uri, boolean alignBaseline) {
             this.uri = uri;
-            if(alignBaseline) {
+            if (uri == null) {
+                throw new NullPointerException("Attempt to create a DraweeSpan with null uri string!");
+            }
+            if (alignBaseline) {
                 this.verticalAlignment = ALIGN_BASELINE;
             }
         }
 
+        /**
+         * @param width width of this span, px
+         * @param height height of this span, px
+         */
         public Builder setLayout(int width, int height) {
             this.width = width;
             this.height = height;
@@ -396,7 +403,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
 
         /**
-         * You can set margin in left, right and top. Bottom is in baseline.
+         * You can set margin in left, right and top in px. Bottom is in baseline.
          */
         public Builder setMargin(int margin) {
             this.margin.set(margin, margin, margin, 0);
@@ -404,13 +411,16 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
 
         /**
-         * You can set margin in left, right and top. Bottom is in baseline.
+         * You can set margin in left, right and top in px. Bottom is in baseline.
          */
         public Builder setMargin(int left, int top, int right) {
             this.margin.set(left, top, right, 0);
             return this;
         }
 
+        /**
+         * @param placeholder The drawable shows on loading image {@code uri}
+         */
         public Builder setPlaceHolderImage(Drawable placeholder) {
             this.placeholder = placeholder;
             return this;
@@ -426,6 +436,10 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
 
         public DraweeSpan build() {
+            if (placeholder == null) {
+                placeholder = new ColorDrawable(Color.TRANSPARENT);
+                placeholder.setBounds(0, 0, width, height);
+            }
             DraweeSpan span = new DraweeSpan(uri, verticalAlignment, placeholder, showAnim);
             span.mLayout.set(width, height);
             span.mMargin.set(margin.left, margin.top, margin.right, 0);
