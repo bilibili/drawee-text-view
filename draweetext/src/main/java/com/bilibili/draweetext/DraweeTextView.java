@@ -50,10 +50,13 @@ public class DraweeTextView extends TextView {
     }
 
     private boolean mHasDraweeInText;
+    // detect drawee-spans has been attached or not
+    private boolean mIsSpanAttached;
 
     @Override
     public void setText(CharSequence text, BufferType type) {
-        if (mHasDraweeInText) {
+        boolean wasSpanAttached = mIsSpanAttached;
+        if (mHasDraweeInText && wasSpanAttached) {
             onDetach(); // detach all old images
             mHasDraweeInText = false;
         }
@@ -63,6 +66,9 @@ public class DraweeTextView extends TextView {
             mHasDraweeInText = spans.length > 0;
         }
         super.setText(text, type);
+        if (mHasDraweeInText && wasSpanAttached) {
+            onAttach(); // reattach drawee spans
+        }
     }
 
     @Override
@@ -108,6 +114,7 @@ public class DraweeTextView extends TextView {
                 // only schedule animation on AnimatableDrawable
                 && (who instanceof ForwardingDrawable && who.getCurrent() instanceof AnimatableDrawable);
     }
+
     /**
      * Attach DraweeSpans in text
      */
@@ -116,6 +123,7 @@ public class DraweeTextView extends TextView {
         for (DraweeSpan image : images) {
             image.onAttach(this);
         }
+        mIsSpanAttached = true;
     }
 
     private DraweeSpan[] getImages() {
@@ -137,5 +145,6 @@ public class DraweeTextView extends TextView {
             }
             image.onDetach();
         }
+        mIsSpanAttached = false;
     }
 }
