@@ -21,9 +21,9 @@ android {
 }
 
 dependencies {
-    // compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.facebook.fresco:fresco:0.13.0' /*required*/
-    compile 'com.facebook.fresco:animated-base:0.13.0' /*required*/
-    provided 'com.facebook.fresco:animated-gif:0.13.0'
+    compile "com.android.support:support-core-utils:${rootProject.ext.supportLibraryVersion}"
+    compile "com.facebook.fresco:fresco:${rootProject.ext.frescoVersion}" /*required*/
+    compile "com.facebook.fresco:animated-base:${rootProject.ext.frescoVersion}" /*required*/
+    provided "com.facebook.fresco:animated-gif:${rootProject.ext.frescoVersion}"
 }

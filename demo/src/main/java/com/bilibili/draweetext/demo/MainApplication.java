@@ -16,7 +16,6 @@ public class MainApplication extends Application {
         super.onCreate();
         // initialize fresco with enabled webp
         Fresco.initialize(this, ImagePipelineConfig.newBuilder(this)
-                .setDecodeMemoryFileEnabled(true) // for older sdk
                 .experiment()
                 .setWebpSupportEnabled(true)
                 .build());

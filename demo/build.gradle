@@ -23,9 +23,9 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:recyclerview-v7:25.0.1'
-    compile 'com.android.support:appcompat-v7:25.0.1'
+    compile "com.android.support:recyclerview-v7:${rootProject.ext.supportLibraryVersion}"
+    compile "com.android.support:appcompat-v7:${rootProject.ext.supportLibraryVersion}"
     compile project(':draweetext')
-    compile 'com.facebook.fresco:webpsupport:0.13.0'
-    compile 'com.facebook.fresco:animated-gif:0.13.0' /*add gif decoding support*/
+    compile "com.facebook.fresco:webpsupport:${rootProject.ext.frescoVersion}"
+    compile "com.facebook.fresco:animated-gif:${rootProject.ext.frescoVersion}" /*add gif decoding support*/
 }

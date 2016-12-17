@@ -22,3 +22,8 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+ext {
+    frescoVersion = '1.0'
+    supportLibraryVersion = '25.0.1'
+}
