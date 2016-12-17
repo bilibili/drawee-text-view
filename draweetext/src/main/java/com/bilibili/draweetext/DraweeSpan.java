@@ -28,6 +28,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.text.style.DynamicDrawableSpan;
 import android.util.Log;
@@ -158,12 +159,6 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         }
         mDeferredReleaser.cancelDeferredRelease(this);
         if (!mIsRequestSubmitted) {
-            try {
-                ImagePipelineFactory.getInstance();
-            } catch (NullPointerException e) {
-                // Image pipeline is not initialized
-                ImagePipelineFactory.initialize(mAttachedView.getContext().getApplicationContext());
-            }
             submitRequest();
         } else if (mShouldShowAnim && mDrawable instanceof AnimatableDrawable) {
             ((AnimatableDrawable) mDrawable).start();
@@ -177,12 +172,7 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
 
         mIsRequestSubmitted = true;
         final String id = getId();
-        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(Uri.parse(getImageUri()))
-                .setImageDecodeOptions(ImageDecodeOptions.newBuilder().setDecodePreviewFrame(true).build())
-                .build();
-
-        mDataSource = ImagePipelineFactory.getInstance().getImagePipeline()
-                .fetchDecodedImage(request, null);
+        mDataSource = fetchDecodedImage();
         DataSubscriber<CloseableReference<CloseableImage>> subscriber
                 = new BaseDataSubscriber<CloseableReference<CloseableImage>>() {
             @Override
@@ -202,6 +192,22 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
             }
         };
         mDataSource.subscribe(subscriber, UiThreadImmediateExecutorService.getInstance());
+    }
+
+    @VisibleForTesting
+    protected DataSource<CloseableReference<CloseableImage>> fetchDecodedImage() {
+        ImagePipelineFactory factory;
+        try {
+            factory = ImagePipelineFactory.getInstance();
+        } catch (NullPointerException e) {
+            // Image pipeline is not initialized
+            ImagePipelineFactory.initialize(mAttachedView.getContext().getApplicationContext());
+            factory = ImagePipelineFactory.getInstance();
+        }
+        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(Uri.parse(getImageUri()))
+                .setImageDecodeOptions(ImageDecodeOptions.newBuilder().setDecodePreviewFrame(true).build())
+                .build();
+        return factory.getImagePipeline().fetchDecodedImage(request, null);
     }
 
     @NonNull
