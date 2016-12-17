@@ -23,6 +23,8 @@ import org.robolectric.shadows.ShadowBitmap;
 import org.robolectric.shadows.ShadowLooper;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -62,6 +64,7 @@ public class DraweeSpanTest {
                 .build();
         DraweeSpan spy = spy(span);
         DataSource<CloseableReference<CloseableImage>> dataSource = DataSources.immediateDataSource(CloseableReference.of(image));
+        assertFalse(dataSource.isClosed());
         doReturn(dataSource)
                 .when(spy).fetchDecodedImage();
         spy.onAttach(textview);
@@ -73,5 +76,6 @@ public class DraweeSpanTest {
         ShadowLooper.runUiThreadTasks();
         verify(image).close();
         verify(releaser).release(bitmap);
+        assertTrue(dataSource.isClosed());
     }
 }
