@@ -1,16 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.1"
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
 
     defaultConfig {
         applicationId "com.bilibili.draweetext.demo"
         minSdkVersion 15
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
         release {
@@ -18,14 +17,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    // avoid warning for "Not all execution paths return a value"
-    return true
 }
 
 dependencies {
-    compile "com.android.support:recyclerview-v7:${rootProject.ext.supportLibraryVersion}"
-    compile "com.android.support:appcompat-v7:${rootProject.ext.supportLibraryVersion}"
-    compile project(':draweetext')
-    compile "com.facebook.fresco:webpsupport:${rootProject.ext.frescoVersion}"
-    compile "com.facebook.fresco:animated-gif:${rootProject.ext.frescoVersion}" /*add gif decoding support*/
+    implementation "com.android.support:recyclerview-v7:${rootProject.ext.supportLibraryVersion}"
+    implementation "com.android.support:appcompat-v7:${rootProject.ext.supportLibraryVersion}"
+    implementation project(':draweetext')
+    implementation "com.facebook.fresco:webpsupport:${rootProject.ext.frescoVersion}"
+    implementation "com.facebook.fresco:animated-gif:${rootProject.ext.frescoVersion}" /*add gif decoding support*/
 }

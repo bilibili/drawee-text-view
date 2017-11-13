@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config;
  * @author yrom.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, manifest = Config.NONE)
+@Config(manifest = Config.NONE)
 public class DraweeTextViewTest {
 
     private DraweeTextView mText;

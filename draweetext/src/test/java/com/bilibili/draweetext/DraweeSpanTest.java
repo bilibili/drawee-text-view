@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
  * @author yrom.
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, manifest = Config.NONE)
+@Config(manifest = Config.NONE)
 public class DraweeSpanTest {
     @Test
     public void testBuild() {
@@ -52,6 +52,7 @@ public class DraweeSpanTest {
     @Test
     public void testLifeCycle(){
         Activity activity = Robolectric.buildActivity(Activity.class).create().get();
+        @SuppressWarnings("unchecked")
         ResourceReleaser<Bitmap> releaser = mock(ResourceReleaser.class);
         Bitmap bitmap = ShadowBitmap.createBitmap(1,1, Bitmap.Config.ARGB_8888);
         CloseableImage image = Mockito.spy(new CloseableStaticBitmap(

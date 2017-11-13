@@ -2,10 +2,11 @@
 
 buildscript {
     repositories {
+        google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.2'
+        classpath 'com.android.tools.build:gradle:3.0.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -15,6 +16,7 @@ buildscript {
 
 allprojects {
     repositories {
+        google()
         jcenter()
     }
 }
@@ -24,6 +26,6 @@ task clean(type: Delete) {
 }
 
 ext {
-    frescoVersion = '1.0'
-    supportLibraryVersion = '25.0.1'
+    frescoVersion = '1.5.0'
+    supportLibraryVersion = '26.0.2'
 }

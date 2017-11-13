@@ -22,6 +22,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.Animatable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -43,13 +44,10 @@ import com.facebook.drawable.base.DrawableWithCaches;
 import com.facebook.drawee.components.DeferredReleaser;
 import com.facebook.drawee.drawable.ForwardingDrawable;
 import com.facebook.drawee.drawable.OrientedDrawable;
-import com.facebook.imagepipeline.animated.base.AbstractAnimatedDrawable;
-import com.facebook.imagepipeline.animated.base.AnimatableDrawable;
-import com.facebook.imagepipeline.animated.base.AnimatedDrawable;
 import com.facebook.imagepipeline.animated.base.AnimatedImageResult;
-import com.facebook.imagepipeline.animated.factory.AnimatedFactory;
 import com.facebook.imagepipeline.common.ImageDecodeOptions;
 import com.facebook.imagepipeline.core.ImagePipelineFactory;
+import com.facebook.imagepipeline.drawable.DrawableFactory;
 import com.facebook.imagepipeline.image.CloseableAnimatedImage;
 import com.facebook.imagepipeline.image.CloseableImage;
 import com.facebook.imagepipeline.image.CloseableStaticBitmap;
@@ -128,8 +126,8 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         if (mDrawable != drawable) {
             releaseDrawable(mDrawable);
             setDrawableInner(drawable);
-            if (drawable instanceof AnimatedDrawable) {
-                ((AnimatableDrawable) drawable).start();
+            if (drawable instanceof Animatable) {
+                ((Animatable) drawable).start();
             }
             mDrawable = drawable;
         }
@@ -160,8 +158,8 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
         mDeferredReleaser.cancelDeferredRelease(this);
         if (!mIsRequestSubmitted) {
             submitRequest();
-        } else if (mShouldShowAnim && mDrawable instanceof AnimatableDrawable) {
-            ((AnimatableDrawable) mDrawable).start();
+        } else if (mShouldShowAnim && mDrawable instanceof Animatable) {
+            ((Animatable) mDrawable).start();
         }
     }
 
@@ -287,14 +285,9 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
                     ? new OrientedDrawable(bitmapDrawable, closeableStaticBitmap.getRotationAngle()) : bitmapDrawable);
         } else if (closeableImage instanceof CloseableAnimatedImage) {
             if (mShouldShowAnim) {
-                AnimatedFactory afactory = ImagePipelineFactory.getInstance().getAnimatedFactory();
-                if (afactory != null) {
-                    Drawable drawable = afactory.getAnimatedDrawableFactory(mAttachedView.getContext())
-                            .create(closeableImage);
-                    if (drawable instanceof AbstractAnimatedDrawable) {
-                        ((AbstractAnimatedDrawable) drawable).setLogId(getId());
-                    }
-                    return drawable;
+                DrawableFactory factory = ImagePipelineFactory.getInstance().getAnimatedDrawableFactory(mAttachedView.getContext());
+                if (factory != null) {
+                    return factory.createDrawable(closeableImage);
                 }
             }
             AnimatedImageResult image = ((CloseableAnimatedImage) closeableImage).getImageResult();
@@ -329,8 +322,8 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     public void onDetach() {
         if (!mIsAttached)
             return;
-        if (mShouldShowAnim && mDrawable instanceof AnimatableDrawable) {
-            ((AnimatableDrawable) mDrawable).stop();
+        if (mShouldShowAnim && mDrawable instanceof Animatable) {
+            ((Animatable) mDrawable).stop();
         }
         mActualDrawable.setCallback(null);
         mAttachedView = null;
@@ -358,8 +351,8 @@ public class DraweeSpan extends DynamicDrawableSpan implements DeferredReleaser.
     }
 
     void releaseDrawable(@Nullable Drawable drawable) {
-        if (drawable instanceof AnimatableDrawable && ((AnimatableDrawable) drawable).isRunning()) {
-            ((AnimatableDrawable) drawable).stop();
+        if (drawable instanceof Animatable && ((Animatable) drawable).isRunning()) {
+            ((Animatable) drawable).stop();
         }
         if (drawable instanceof DrawableWithCaches) {
             ((DrawableWithCaches) drawable).dropCaches();

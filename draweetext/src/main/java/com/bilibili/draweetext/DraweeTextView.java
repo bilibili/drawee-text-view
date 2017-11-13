@@ -17,6 +17,7 @@ package com.bilibili.draweetext;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Spanned;
@@ -24,7 +25,6 @@ import android.util.AttributeSet;
 import android.widget.TextView;
 
 import com.facebook.drawee.drawable.ForwardingDrawable;
-import com.facebook.imagepipeline.animated.base.AnimatableDrawable;
 
 /**
  * Like {@link com.facebook.drawee.view.DraweeView} that displays drawables {@link DraweeSpan} but surrounded with text.
@@ -112,7 +112,7 @@ public class DraweeTextView extends TextView {
     protected boolean verifyDrawable(Drawable who) {
         return super.verifyDrawable(who) || mHasDraweeInText
                 // only schedule animation on AnimatableDrawable
-                && (who instanceof ForwardingDrawable && who.getCurrent() instanceof AnimatableDrawable);
+                && (who instanceof ForwardingDrawable && who.getCurrent() instanceof Animatable);
     }
 
     /**

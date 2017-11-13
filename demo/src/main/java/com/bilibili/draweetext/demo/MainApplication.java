@@ -4,6 +4,7 @@ import android.app.Application;
 import android.util.Log;
 
 import com.facebook.common.logging.FLog;
+import com.facebook.common.logging.FLogDefaultLoggingDelegate;
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.imagepipeline.core.ImagePipelineConfig;
 
@@ -21,6 +22,7 @@ public class MainApplication extends Application {
                 .build());
         // for debug
         if (BuildConfig.DEBUG) {
+            FLogDefaultLoggingDelegate.getInstance().setApplicationTag("Drawee-text");
             FLog.setMinimumLoggingLevel(Log.VERBOSE);
         }
     }

@@ -48,14 +48,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-        ViewPager pager = (ViewPager) findViewById(R.id.container);
+        ViewPager pager = findViewById(R.id.container);
         pager.setAdapter(new SectionsAdapter(getSupportFragmentManager()));
     }
 
 
     private class SectionsAdapter extends FragmentPagerAdapter {
 
-        public SectionsAdapter(FragmentManager fm) {
+        SectionsAdapter(FragmentManager fm) {
             super(fm);
         }
 
@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
             super.onViewCreated(view, savedInstanceState);
-            final TextView textview = (TextView) view.findViewById(R.id.text1);
+            final TextView textview = view.findViewById(R.id.text1);
             textview.setMovementMethod(ScrollingMovementMethod.getInstance());
             textview.setText(buildText());
             view.findViewById(R.id.button).setOnClickListener(new View.OnClickListener() {
@@ -310,7 +310,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
             super.onViewCreated(view, savedInstanceState);
-            RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.recycler);
+            RecyclerView recyclerView = view.findViewById(R.id.recycler);
             recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
             recyclerView.setHasFixedSize(true);
 
@@ -355,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
         static class TextViewHolder extends RecyclerView.ViewHolder {
             TextView text;
 
-            public TextViewHolder(View itemView) {
+            TextViewHolder(View itemView) {
                 super(itemView);
                 text = (TextView) itemView;
             }
