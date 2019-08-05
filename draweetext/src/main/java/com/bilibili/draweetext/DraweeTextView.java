@@ -66,7 +66,7 @@ public class DraweeTextView extends TextView {
             mHasDraweeInText = spans.length > 0;
         }
         super.setText(text, type);
-        if (mHasDraweeInText && wasSpanAttached) {
+        if (mHasDraweeInText) {
             onAttach(); // reattach drawee spans
         }
     }
